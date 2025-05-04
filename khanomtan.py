@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-class KhanomtanTTS:
+class KhanomTanTTS:
 
   def __init__(self, version:str="1.0", device:str="cpu"):
 
@@ -66,12 +66,29 @@ class KhanomtanTTS:
       print(e.stderr)
     except Exception as e:
       print(f"An unexpected error occurred: {e}")
+  
+  def _is_filename_or_path(self, path_string:str) -> str:
+    
+    if os.path.isabs(path_string):
+      return "Absolute Path"
+    else:
+      if os.path.dirname(path_string) == '':
+        return "Filename"
+      else:
+        return "Relative Path"
 
   def __call__(self, text:str, speaker_idx:str, file_path:str, language_idx:str|None=None, device:str|None=None, verbose:bool=True):
 
     pre_synthesis_wd = os.getcwd()
 
     os.chdir(self.model_dir)
+
+    path_type = self._is_filename_or_path(file_path)
+
+    if path_type == "Filename" or path_type == "Relative Path":
+      if verbose:
+        print(f"file_path is {path_type}")
+      file_path = os.path.join(pre_synthesis_wd, file_path)
 
     command = [
       "tts",
@@ -106,3 +123,16 @@ class KhanomtanTTS:
     
     finally:
       os.chdir(pre_synthesis_wd)
+
+# Example usage
+if __name__ == "__main__":
+  # from khanomtan import KhanomTanTTS
+  from random import randint
+  
+  khanomtan = KhanomTanTTS(version="1.0")
+  speaker_i = randint(0, len(khanomtan.speaker_list)-1)
+
+  speaker = khanomtan.speaker_list[speaker_i]
+  print(f"randomly picked {speaker}'s voice for synthesis")
+  
+  khanomtan(text="หละ สู หลัด หวุด ลี ดู", speaker_idx=speaker, file_path="/content/output_from_python.wav")
